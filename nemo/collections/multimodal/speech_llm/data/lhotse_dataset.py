@@ -195,6 +195,8 @@ class LhotseAudioQuestionAnswerDataset(torch.utils.data.Dataset):
             ]
             assert all(i[0] == audio_locator_tag[0][0] for i in audio_locator_tag)
             audio_locator_ids = torch.LongTensor(self.text_processor.tokenizer.text_to_ids(audio_locator_tag[0][0]))
+            if len(audio_locator_ids) == 2 and audio_locator_ids[0].item() == 252303: 
+                audio_locator_ids = audio_locator_ids[1:] #slicing to maintain shape of 1
             assert (
                 len(audio_locator_ids) == 1
             ), "audio_locator_tag must be a single token after tokenization to avoid tokenization discrepancies"

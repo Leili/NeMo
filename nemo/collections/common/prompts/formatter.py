@@ -5,6 +5,7 @@ from typing import Any, Type
 import torch
 
 from nemo.collections.common.tokenizers import AggregateTokenizer, TokenizerSpec
+from nemo.utils import logging
 
 PREAMBLE_ROLE = "preamble"
 
@@ -238,6 +239,7 @@ class PromptFormatter(ABC):
             value = slot_values.get(slot)
             assert value is not None, f"Missing required {slot=} in {slot_values=} for {prompt_template=}"
             prompt = prompt.replace(_mangled(slot), value)
+        logging.info(f'prompt__after: {prompt}')
         return self._apply_tokenizer(prompt, lang=slot_values.get(self.PROMPT_LANGUAGE_SLOT))
 
     def encode_dialog(self, turns: list[dict]) -> dict[str, torch.Tensor]:
