@@ -24,13 +24,13 @@ class MinitronPromptFormatter(PromptFormatter):
             },
         },
         "user": {
-            "template": f"<extra_id_1>User\n|message|\n",
+            "template": f"<extra_id_1>User\n|message|\n<extra_id_1>Assistant\n",
             "slots": {
                 "message": Modality.Text,
             },
         },
         OUTPUT_ROLE: {
-            "template": f"<extra_id_1>Assistant\n|message|",
+            "template": f"|message|",
             "slots": {
                 "message": Modality.Text,
             },
@@ -39,8 +39,6 @@ class MinitronPromptFormatter(PromptFormatter):
 
 @registered_prompt_format_fn
 def minitron(cuts: CutSet, tokenizer: TokenizerSpec):
-    logging.info(f"LEILI DEBUG")
-    logging.info(f"HELLO FROM MINITRON")
     prompt = MinitronPromptFormatter(tokenizer)
     ans = defaultdict(list)
     for cut in cuts:

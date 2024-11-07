@@ -97,11 +97,14 @@ class LhotseAudioQuestionAnswerDataset(torch.utils.data.Dataset):
                     cut.context = getattr(cut, self.default_context_key)
                 else:
                     cut.context = self.default_context
+                #LEILI
+                '''
                 if self.convert_to_conv_by_inject_str is not None:
                     if self.convert_to_conv_by_inject_str_the_end:
                         cut.context = cut.context + ' ' + self.convert_to_conv_by_inject_str
                     else:
                         cut.context = self.convert_to_conv_by_inject_str + ' ' + cut.context
+                '''
                 new_cuts.append(cut)
             cuts = CutSet(new_cuts)
 
@@ -132,6 +135,10 @@ class LhotseAudioQuestionAnswerDataset(torch.utils.data.Dataset):
                 audio_locator_ids = torch.LongTensor(
                     self.text_processor.tokenizer.text_to_ids(self.convert_to_conv_by_inject_str)
                 )
+                #LEILI
+                if len(audio_locator_ids) == 2 and audio_locator_ids[0].item() == 252303: 
+                    audio_locator_ids = audio_locator_ids[1:] #slicing to maintain shape of 1
+                assert len(audio_locator_ids) == 1
                 ans['audio_locator_ids'] = audio_locator_ids
                 ans['loss_mask'] = torch.cat([0 * ans['loss_mask'][:, :1], ans['loss_mask']], dim=1)
                 ans = {'multimodal_conversation': ans}
@@ -193,13 +200,16 @@ class LhotseAudioQuestionAnswerDataset(torch.utils.data.Dataset):
                 [turn.audio_locator_tag for turn in example.turns if isinstance(turn, AudioTurn)]
                 for example in multimodal_convo_examples
             ]
+            #logging.info(f"LEILI:getitem; {audio_locator_tag=}")
             assert all(i[0] == audio_locator_tag[0][0] for i in audio_locator_tag)
             audio_locator_ids = torch.LongTensor(self.text_processor.tokenizer.text_to_ids(audio_locator_tag[0][0]))
+            #LEILI
             if len(audio_locator_ids) == 2 and audio_locator_ids[0].item() == 252303: 
                 audio_locator_ids = audio_locator_ids[1:] #slicing to maintain shape of 1
             assert (
                 len(audio_locator_ids) == 1
             ), "audio_locator_tag must be a single token after tokenization to avoid tokenization discrepancies"
+            #logging.info(f"LEILI:getitem; {audio_locator_ids=}")
             ans["multimodal_conversation"] = {
                 "sample_ids": list(cuts.ids),
                 "audio_signal": audio,

@@ -348,17 +348,20 @@ class NeMoMultimodalConversation:
             tokenizer = tokenizer._tokenizer
         if isinstance(tokenizer, AggregateTokenizer):
             raise NotImplementedError("NeMoMultimodalConversation does not support AggregateTokenizer yet.")
+        
+        #logging.info(f'LEILI-DEBUG\nPROMPT_FORMATTER: {prompt}')
         if prompt is None:
             prompt = PromptFormatter.resolve("plain")(tokenizer)
         elif isinstance(prompt, str):
             prompt = PromptFormatter.resolve(prompt)(tokenizer)
 
         # Collapse consecutive same-role turns into single turn for proper prompt formatting.
+        start_of_speech, end_of_speech = "<extra_id_10>", "<extra_id_11>"
         turns = groupby(
             [
                 {
                     "role": turn.role,
-                    "slots": {"message": turn.value if isinstance(turn, TextTurn) else turn.audio_locator_tag},
+                    "slots": {"message": turn.value if isinstance(turn, TextTurn) else "".join([start_of_speech, turn.audio_locator_tag, end_of_speech])},
                 }
                 for turn in self.turns
             ],
@@ -439,7 +442,8 @@ class NeMoMultimodalConversationJsonlAdapter:
                                 audio_locator_tag=self.audio_locator_tag,
                             )
                         )
-                        for turn in data["conversations"]
+                        #LEILI: ADD SYSTEM TURN HERE
+                        for turn in [{"value": data["system"], "from": "system", "type": "text"}] + data["conversations"]
                     ],
                 )
 

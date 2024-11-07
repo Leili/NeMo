@@ -357,6 +357,10 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
             processed_signal=None,
             processed_signal_length=None,
         )
+        
+        #logging.info(f'LEILI:prepare_llm_input_conv')
+        #logging.info(f"encoded: {encoded.shape}")
+        #logging.info(f"encoded_len: {encoded_len.shape}")
 
         input_ids, input_length, loss_mask, audio_locator_ids = (
             audio_batch['input_ids'],  # this includes bos and eos
@@ -364,6 +368,10 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
             audio_batch['loss_mask'],  # this includes bos and eos
             audio_batch['audio_locator_ids'],
         )
+
+        #logging.info(f"LEILI:ModularAudio -- {audio_locator_ids=}")
+        logging.info(f"LEILI:ModularAudio -- {input_ids=}")
+        logging.info(f"Leili:loss_debug: {input_ids.shape=}, {input_length.shape=}, {loss_mask.shape=}, {audio_locator_ids.shape=}")
 
         encoder_input, encoder_length, labels, loss_mask, attention_mask, position_ids = (
             self.inject_perception_input_conv(
@@ -405,6 +413,9 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
         # )
         input_embeds = lm_embedding.word_embeddings(input_ids)  # [b, t, c]
 
+        #LEILI
+        from megatron.core import parallel_state
+
         PAD_ID = self.tokenizer.pad_id
         audio_cnt = 0
         all_input_embeds = []
@@ -413,6 +424,12 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
         for idx, (cur_input_ids, cur_input_length, cur_loss_mask) in enumerate(
             zip(input_ids, input_length, loss_mask)
         ):
+
+            #LEILI
+            logging.info(f"LEILI:DEADLOCK-1; [DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] [TP {parallel_state.get_tensor_model_parallel_rank()}/{parallel_state.get_tensor_model_parallel_world_size()}] {cur_input_length=}")
+            logging.info(f"LEILI:DEADLOCK-2; [DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] [TP {parallel_state.get_tensor_model_parallel_rank()}/{parallel_state.get_tensor_model_parallel_world_size()}] cur_input_ids shape: {cur_input_ids.shape}")
+
+            #logging.info(f"[DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] ")
             cur_input_ids = cur_input_ids[:cur_input_length]
             cur_loss_mask = cur_loss_mask[:cur_input_length]
 
@@ -421,12 +438,17 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
             new_input_ids = []
             new_loss_mask = []
             start_pos = 0
+            logging.info(f"LEILI:Before loop: {cur_input_ids=}\n{cur_input_length=}")
+            assert len(audio_locator_ids) == 1
+            #logging.info(f"LEILI:range {len(audio_locator_ids)}")
             for pos in range(cur_input_length - len(audio_locator_ids) + 1):
                 if (cur_input_ids[pos : pos + len(audio_locator_ids)] == audio_locator_ids).all():
                     # add previous text embeddings
                     new_input_embeds.append(input_embeds[idx, start_pos:pos])
                     new_input_ids.append(cur_input_ids[start_pos:pos])
                     new_loss_mask.append(cur_loss_mask[start_pos:pos])
+
+                    #logging.info(f'LEILI:Inject; encoded shape: {encoded.shape}; encoded_len shape: {encoded_len.shape}; {audio_cnt=}')
 
                     # add current audio embeddings
                     new_input_embeds.append(encoded[audio_cnt, : encoded_len[audio_cnt]])
@@ -449,6 +471,12 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
             all_input_ids.append(new_input_ids)
             all_loss_mask.append(new_loss_mask)
 
+        #LEILI
+        #logging.info(f"inject_perception_input_conv\n{audio_locator_ids=}")
+        #logging.info(f"*********************")
+        #logging.info(f"{audio_locator_ids=}")
+        #logging.info(f"*********************")
+        #logging.info(f"{input_ids=}")
         assert audio_cnt == len(encoded), (audio_cnt, len(encoded))
 
         encoder_length = torch.LongTensor([len(x) for x in all_input_embeds]).to(input_ids.device)
@@ -839,13 +867,21 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
                         batch_size=1,
                         rank_zero_only=False,
                     )
-                    self.log(
-                        f'{key}_batch_size',
-                        loss_mask.shape[0],
-                        prog_bar=True,
-                        batch_size=1,
-                        rank_zero_only=False,
-                    )
+                
+                #LEILI
+                print(f"LEILI:DEADLOCK-loss-1; [DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] [TP {parallel_state.get_tensor_model_parallel_rank()}/{parallel_state.get_tensor_model_parallel_world_size()}] {key=}")
+                print(f"LEILI:DEADLOCK-loss-2; [DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] [TP {parallel_state.get_tensor_model_parallel_rank()}/{parallel_state.get_tensor_model_parallel_world_size()}] loss_mask shape: {loss_mask.shape}")
+                print(f"LEILI:DEADLOCK-loss-3; [DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] [TP {parallel_state.get_tensor_model_parallel_rank()}/{parallel_state.get_tensor_model_parallel_world_size()}] loss_mask: {loss_mask=}")
+                
+                self.log(
+                    f'{key}_batch_size',
+                    loss_mask.shape[0],
+                    prog_bar=True,
+                    batch_size=1,
+                    rank_zero_only=False,
+                )
+                
+                logging.info(f"LEILI:DEADLOCK-loss-4; Passed self.log")
 
                 cp_size = self.cfg.get('context_parallel_size', 1)
                 if self.cfg.data.get("return_output_tensors", False):
@@ -2035,6 +2071,12 @@ class CrossAttendModularAudioGPTModel(ModularAudioGPTModel):
             audio_batch['loss_mask'],
             audio_batch['audio_locator_ids'],
         )
+        #LEILI
+        #logging.info(f"CrossAttend -- BEFORE: {audio_locator_ids=}")
+        #logging.info(f"{audio_locator_ids.shape}")
+        #audio_locator_ids = audio_locator_ids[1:]
+        #logging.info(f"CrossAttend -- AFTER: {audio_locator_ids=}")
+        #logging.info(f"{audio_locator_ids.shape}")
         # loss_mask here is w.r.t. the audio_batch['input_ids'] in conv_batch
         # slice it to accommodate the audio_batch['tokens']
         if loss_mask is not None:
