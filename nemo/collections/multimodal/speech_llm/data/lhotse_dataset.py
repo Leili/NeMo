@@ -97,7 +97,7 @@ class LhotseAudioQuestionAnswerDataset(torch.utils.data.Dataset):
                     cut.context = getattr(cut, self.default_context_key)
                 else:
                     cut.context = self.default_context
-                #LEILI
+                #LEILI - comment out if statement below to avoid default audio_locator injection
                 '''
                 if self.convert_to_conv_by_inject_str is not None:
                     if self.convert_to_conv_by_inject_str_the_end:

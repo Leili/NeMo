@@ -193,6 +193,7 @@ class PromptFormatter(ABC):
     @classmethod
     @lru_cache(1)
     def get_roles(cls) -> list[str]:
+        #logging.info(f"Leili - template: {cls.TEMPLATE}")
         return list(cls.TEMPLATE.keys())
 
     @classmethod
@@ -303,6 +304,7 @@ class PromptFormatter(ABC):
             )
         else:
             ans["context_ids"] = ans["input_ids"]  # context == input for inference
+        logging.info(f"Leili check dialogue:\n{ans['input_ids']=}")
         return ans
 
     def _apply_tokenizer(self, text: str, lang: str | None = None) -> list[int]:

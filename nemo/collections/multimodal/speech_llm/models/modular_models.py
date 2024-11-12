@@ -61,6 +61,7 @@ from nemo.core.classes.common import PretrainedModelInfo
 from nemo.core.classes.mixins import adapter_mixins
 from nemo.utils import AppState, logging, model_utils
 from nemo.utils.model_utils import inject_model_parallel_rank
+import pickle
 
 try:
     from megatron.core import InferenceParams, parallel_state, tensor_parallel
@@ -370,8 +371,10 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
         )
 
         #logging.info(f"LEILI:ModularAudio -- {audio_locator_ids=}")
-        logging.info(f"LEILI:ModularAudio -- {input_ids=}")
-        logging.info(f"Leili:loss_debug: {input_ids.shape=}, {input_length.shape=}, {loss_mask.shape=}, {audio_locator_ids.shape=}")
+        #logging.info(f"LEILI:ModularAudio -- {input_ids=}\n{input_length=}\n{loss_mask=}\n{audio_locator_ids=}")
+        #logging.info(f"Leili:loss_debug: {input_ids.shape=}, {input_length.shape=}, {loss_mask.shape=}, {audio_locator_ids.shape=}")
+
+        #logging.info(f"parallel loss_debug; [DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] [TP {parallel_state.get_tensor_model_parallel_rank()}/{parallel_state.get_tensor_model_parallel_world_size()}] {input_ids.shape=}, {input_length.shape=}, {loss_mask.shape=}, {audio_locator_ids.shape=}")
 
         encoder_input, encoder_length, labels, loss_mask, attention_mask, position_ids = (
             self.inject_perception_input_conv(
@@ -413,9 +416,6 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
         # )
         input_embeds = lm_embedding.word_embeddings(input_ids)  # [b, t, c]
 
-        #LEILI
-        from megatron.core import parallel_state
-
         PAD_ID = self.tokenizer.pad_id
         audio_cnt = 0
         all_input_embeds = []
@@ -425,9 +425,16 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
             zip(input_ids, input_length, loss_mask)
         ):
 
+
+            #dp_rank = parallel_state.get_data_parallel_rank()
+            #tp_rank = parallel_state.get_tensor_model_parallel_rank()
+            #_path = "/results/multiturn_debug/debug_output"
+            #with open(os.path.join(f"./deadlock_debug_pkl/debug-data-dp{dp_rank}-tp{tp_rank}.pkl"), "ab") as f:
+            #    pickle.dump({"cur_input_length": cur_input_length.cpu().numpy().tolist(), "cur_input_ids.shape": list(cur_input_ids.cpu().shape)}, f)
+
             #LEILI
-            logging.info(f"LEILI:DEADLOCK-1; [DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] [TP {parallel_state.get_tensor_model_parallel_rank()}/{parallel_state.get_tensor_model_parallel_world_size()}] {cur_input_length=}")
-            logging.info(f"LEILI:DEADLOCK-2; [DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] [TP {parallel_state.get_tensor_model_parallel_rank()}/{parallel_state.get_tensor_model_parallel_world_size()}] cur_input_ids shape: {cur_input_ids.shape}")
+            #logging.info(f"LEILI:DEADLOCK-1; [DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] [TP {parallel_state.get_tensor_model_parallel_rank()}/{parallel_state.get_tensor_model_parallel_world_size()}] {cur_input_length=}")
+            #logging.info(f"LEILI:DEADLOCK-2; [DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] [TP {parallel_state.get_tensor_model_parallel_rank()}/{parallel_state.get_tensor_model_parallel_world_size()}] cur_input_ids shape: {cur_input_ids.shape}")
 
             #logging.info(f"[DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] ")
             cur_input_ids = cur_input_ids[:cur_input_length]
@@ -438,7 +445,7 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
             new_input_ids = []
             new_loss_mask = []
             start_pos = 0
-            logging.info(f"LEILI:Before loop: {cur_input_ids=}\n{cur_input_length=}")
+            #logging.info(f"LEILI:Before loop: {cur_input_ids=}\n{cur_input_length=}")
             assert len(audio_locator_ids) == 1
             #logging.info(f"LEILI:range {len(audio_locator_ids)}")
             for pos in range(cur_input_length - len(audio_locator_ids) + 1):
@@ -852,6 +859,8 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
 
                 modality_weights = self.cfg.get("modality_loss_weights")
 
+                #logging.info(f"LEILI before-loop: multimodal_output --> {multimodal_output=}")
+
                 for key, (output, loss_mask) in multimodal_output.items():
                     cur_loss = self.loss_func(loss_mask.contiguous(), loss_mask.sum(), output.contiguous())
                     if modality_weights is not None:
@@ -869,10 +878,17 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
                     )
                 
                 #LEILI
-                print(f"LEILI:DEADLOCK-loss-1; [DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] [TP {parallel_state.get_tensor_model_parallel_rank()}/{parallel_state.get_tensor_model_parallel_world_size()}] {key=}")
-                print(f"LEILI:DEADLOCK-loss-2; [DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] [TP {parallel_state.get_tensor_model_parallel_rank()}/{parallel_state.get_tensor_model_parallel_world_size()}] loss_mask shape: {loss_mask.shape}")
-                print(f"LEILI:DEADLOCK-loss-3; [DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] [TP {parallel_state.get_tensor_model_parallel_rank()}/{parallel_state.get_tensor_model_parallel_world_size()}] loss_mask: {loss_mask=}")
+                #print(f"LEILI:DEADLOCK-loss-1; [DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] [TP {parallel_state.get_tensor_model_parallel_rank()}/{parallel_state.get_tensor_model_parallel_world_size()}] {key=}")
+                #print(f"LEILI:DEADLOCK-loss-2; [DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] [TP {parallel_state.get_tensor_model_parallel_rank()}/{parallel_state.get_tensor_model_parallel_world_size()}] loss_mask shape: {loss_mask.shape}")
+                #print(f"LEILI:DEADLOCK-loss-3; [DP {parallel_state.get_data_parallel_rank()}/{parallel_state.get_data_parallel_world_size()}] [TP {parallel_state.get_tensor_model_parallel_rank()}/{parallel_state.get_tensor_model_parallel_world_size()}] loss_mask: {loss_mask=}")
                 
+                #dp_rank = parallel_state.get_data_parallel_rank()
+                #tp_rank = parallel_state.get_tensor_model_parallel_rank()
+                #_path = "/results/multiturn_debug/debug_output"
+                #with open(os.path.join(f"./deadlock_debug_pkl/debug-data-dp{dp_rank}-tp{tp_rank}.pkl"), "ab") as f:
+                #    pickle.dump({"key": key, "loss_mask.shape": list(loss_mask.cpu().shape)}, f)
+                #logging.info(f"LEILI: loss_mask --> {loss_mask=}")
+
                 self.log(
                     f'{key}_batch_size',
                     loss_mask.shape[0],
@@ -881,7 +897,6 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
                     rank_zero_only=False,
                 )
                 
-                logging.info(f"LEILI:DEADLOCK-loss-4; Passed self.log")
 
                 cp_size = self.cfg.get('context_parallel_size', 1)
                 if self.cfg.data.get("return_output_tensors", False):

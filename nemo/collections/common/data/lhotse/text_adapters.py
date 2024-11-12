@@ -336,7 +336,8 @@ class NeMoMultimodalConversation:
     def tokenize(
         self,
         tokenizer: TokenizerWrapper | TokenizerSpec,
-        prompt: PromptFormatter = None,
+        #prompt: PromptFormatter = None,
+        prompt: PromptFormatter = "minitron", #LEILI 
     ) -> "NeMoMultimodalConversation":
         """
         Create a tokenized variant of this example given a tokenizer (i.e. fill the optional fields).
@@ -349,7 +350,7 @@ class NeMoMultimodalConversation:
         if isinstance(tokenizer, AggregateTokenizer):
             raise NotImplementedError("NeMoMultimodalConversation does not support AggregateTokenizer yet.")
         
-        #logging.info(f'LEILI-DEBUG\nPROMPT_FORMATTER: {prompt}')
+        #logging.info(f'LEILI-DEBUG; PROMPT_FORMATTER: {prompt}')
         if prompt is None:
             prompt = PromptFormatter.resolve("plain")(tokenizer)
         elif isinstance(prompt, str):
@@ -361,7 +362,7 @@ class NeMoMultimodalConversation:
             [
                 {
                     "role": turn.role,
-                    "slots": {"message": turn.value if isinstance(turn, TextTurn) else "".join([start_of_speech, turn.audio_locator_tag, end_of_speech])},
+                    "slots": {"message": turn.value if isinstance(turn, TextTurn) else "".join([start_of_speech, turn.audio_locator_tag, end_of_speech])}, #LEILI
                 }
                 for turn in self.turns
             ],
@@ -444,6 +445,7 @@ class NeMoMultimodalConversationJsonlAdapter:
                         )
                         #LEILI: ADD SYSTEM TURN HERE
                         for turn in [{"value": data["system"], "from": "system", "type": "text"}] + data["conversations"]
+                        #for turn in data["conversations"]
                     ],
                 )
 
