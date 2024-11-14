@@ -304,7 +304,7 @@ class PromptFormatter(ABC):
             )
         else:
             ans["context_ids"] = ans["input_ids"]  # context == input for inference
-        logging.info(f"Leili check dialogue:\n{ans['input_ids']=}")
+        #logging.info(f"Leili check dialogue:\n{ans['input_ids']=}")
         return ans
 
     def _apply_tokenizer(self, text: str, lang: str | None = None) -> list[int]:

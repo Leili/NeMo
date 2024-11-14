@@ -444,7 +444,7 @@ class NeMoMultimodalConversationJsonlAdapter:
                             )
                         )
                         #LEILI: ADD SYSTEM TURN HERE
-                        for turn in [{"value": data["system"], "from": "system", "type": "text"}] + data["conversations"]
+                        for turn in ([{"value": data["system"], "from": "system", "type": "text"}] if "system" in data else []) + data["conversations"]
                         #for turn in data["conversations"]
                     ],
                 )
