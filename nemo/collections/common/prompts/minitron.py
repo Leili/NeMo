@@ -9,13 +9,16 @@ from nemo.collections.common.prompts.formatter import BOS_SLOT, EOS_SLOT, Modali
 from nemo.collections.common.tokenizers import TokenizerSpec
 from nemo.utils import logging
 
-
 class MinitronPromptFormatter(PromptFormatter):
     """
     Prompt formatter similar to llama3 example
     """
     NAME = "minitron"
     OUTPUT_ROLE = "assistant"
+
+    INSERT_BOS = False
+    INSERT_EOS = True
+
     TEMPLATE = {
         "system": {
             "template": f"<extra_id_0>System\nYou are an AI assistant who can understand and generate multimodal content, including text, speech and audio. Please recognize the input audio and give appropriate reply in text.\n|message|\n\n",
@@ -30,7 +33,7 @@ class MinitronPromptFormatter(PromptFormatter):
             },
         },
         OUTPUT_ROLE: {
-            "template": f"|message|",
+            "template": f"|message|\n",
             "slots": {
                 "message": Modality.Text,
             },

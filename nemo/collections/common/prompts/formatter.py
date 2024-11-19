@@ -251,6 +251,8 @@ class PromptFormatter(ABC):
         turn_token_counts = []
         turn_mask_values = []
 
+        #logging.info(f"Leili BOS/EOS: {self.INSERT_BOS=}; {self.INSERT_EOS=}; {self.tokenizer.bos=}; {self.tokenizer.eos=} ")
+
         if self.INSERT_BOS:
             turn_tokens.append(self.tokenizer.bos)
             turn_token_counts.append(1)
