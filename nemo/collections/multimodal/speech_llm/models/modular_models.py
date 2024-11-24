@@ -1377,6 +1377,16 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
             return_state_dict.update(state_dict)
             return return_state_dict
 
+    def on_train_epoch_start(self) -> None:
+        app_state = AppState()
+        reconfigure_num_microbatches_calculator(
+            rank=app_state.global_rank,
+            rampup_batch_size=None,
+            global_batch_size=self.cfg.data.train_ds.global_batch_size,
+            micro_batch_size=self.cfg.data.train_ds.micro_batch_size,
+            data_parallel_size=parallel_state.get_data_parallel_world_size(),
+        )
+    
     def load_state_dict(self, state_dict, strict: bool = True):
         if not self.setup_complete:
             if self.cfg.get('override_vocab_size', False):
