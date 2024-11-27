@@ -1195,6 +1195,35 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
         if 'inference' in cfg:
             inference_cfg = OmegaConf.to_container(cfg.inference, resolve=True)
             model.set_inference_config(inference_cfg)
+
+        #LEILI
+        #model = restore_from_pretrained_models(cfg, trainer)
+        if cfg.model.get('resume_from_checkpoint') is not None:
+
+            logging.info(f"model embedding shape before loading: {model.state_dict()['model.embedding.word_embeddings.weight'].shape}")
+            logging.info(model.state_dict())
+            
+            checkpoint_path = inject_model_parallel_rank(cfg.model.get('resume_from_checkpoint'))
+            logging.info(f"inject_model_parallel_rank output {checkpoint_path=}")
+            torch_state_dict = torch.load(checkpoint_path)['state_dict']
+
+            logging.info(f"loading from {cfg.model.get('resume_from_checkpoint')}: {torch_state_dict.keys()}")
+            logging.info(f"torch_state_dict from checkpoint {torch_state_dict=}")
+
+            model.setup_complete = False
+            model.load_state_dict(torch_state_dict, strict=True)
+            
+            logging.info(f"model weight after checkpoint loading")
+            logging.info(f"model embedding shape after loading: {model.state_dict()['model.embedding.word_embeddings.weight'].shape}")
+            logging.info(model.state_dict())
+
+            '''
+            if cfg.model.get('megatron_amp_O2', False):
+                model = model.model.module
+            else:
+                model = model.model
+            '''
+        
         return model
 
     @classmethod
