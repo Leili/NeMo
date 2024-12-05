@@ -424,6 +424,15 @@ class NeMoMultimodalConversationJsonlAdapter:
             random.Random(seed).shuffle(paths)
         for path in paths:
             for data in load_jsonl(path):
+                '''
+                for turn in data["conversations"]:
+                    if turn["type"] != "text": 
+                        tmp1 = turn["value"]
+                        tmp2 = get_full_path(turn["value"], path)
+                        logging.info(f"Leili debug turn_value={tmp1}, path={path}")
+                        cut=Recording.from_file(get_full_path(turn["value"], path)).to_cut()
+                        logging.info("loading complete!")
+                '''
                 yield NeMoMultimodalConversation(
                     id=data["id"],
                     turns=[

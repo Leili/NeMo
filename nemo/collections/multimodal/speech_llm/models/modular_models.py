@@ -63,6 +63,8 @@ from nemo.utils import AppState, logging, model_utils
 from nemo.utils.model_utils import inject_model_parallel_rank
 import pickle
 
+from collections import OrderedDict
+
 try:
     from megatron.core import InferenceParams, parallel_state, tensor_parallel
     from megatron.core.models.gpt import GPTModel as MCoreGPTModel
@@ -1196,27 +1198,40 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
             inference_cfg = OmegaConf.to_container(cfg.inference, resolve=True)
             model.set_inference_config(inference_cfg)
 
-        #LEILI
+        #LEILI CHECKPOINT
         #model = restore_from_pretrained_models(cfg, trainer)
         if cfg.model.get('resume_from_checkpoint') is not None:
 
-            logging.info(f"model embedding shape before loading: {model.state_dict()['model.embedding.word_embeddings.weight'].shape}")
-            logging.info(model.state_dict())
+            #logging.info(f"model weight before/after checkpoint loading\n{model.state_dict()=}")
             
             checkpoint_path = inject_model_parallel_rank(cfg.model.get('resume_from_checkpoint'))
-            logging.info(f"inject_model_parallel_rank output {checkpoint_path=}")
+            #logging.info(f"inject_model_parallel_rank output {checkpoint_path=}")
             torch_state_dict = torch.load(checkpoint_path)['state_dict']
+            
+            # This block adapts the checkpoint dictionary names for AMP
+            ##########
+            if cfg.model.get('megatron_amp_O2', True):
+                logging.info(f"Updating checkpoint for megatron_amp_02")
+                new_state_dict = OrderedDict()
+                for key, value in torch_state_dict.items(): 
+                    if key.startswith('model.') and not key.startswith('model.module.'): 
+                        new_key = "".join(["model.module.", key[len("model."):]])
+                        #print(f"{key=} ---> {new_key=}")
+                        new_state_dict[new_key] = value
+                    else: 
+                        new_state_dict[key] = value
+                
+                torch_state_dict = new_state_dict
+            ##########
 
-            logging.info(f"loading from {cfg.model.get('resume_from_checkpoint')}: {torch_state_dict.keys()}")
-            logging.info(f"torch_state_dict from checkpoint {torch_state_dict=}")
+            #logging.info(f"loading from {cfg.model.get('resume_from_checkpoint')}: {torch_state_dict.keys()}")
+            #logging.info(f"torch_state_dict from checkpoint {torch_state_dict=}")
 
             model.setup_complete = False
             model.load_state_dict(torch_state_dict, strict=True)
             
-            logging.info(f"model weight after checkpoint loading")
-            logging.info(f"model embedding shape after loading: {model.state_dict()['model.embedding.word_embeddings.weight'].shape}")
-            logging.info(model.state_dict())
-
+            #logging.info(f"model weight before/after checkpoint loading\n{model.state_dict()=}")
+            
             '''
             if cfg.model.get('megatron_amp_O2', False):
                 model = model.model.module
