@@ -23,6 +23,9 @@ from nemo.collections.nlp.parts.megatron_trainer_builder import MegatronTrainerB
 from nemo.core.config import hydra_runner
 from nemo.utils import logging
 
+import torch, os
+from nemo.utils.model_utils import inject_model_parallel_rank
+
 mp.set_start_method("spawn", force=True)
 
 """
@@ -98,6 +101,25 @@ def main(cfg) -> None:
         model = ModularAudioGPTModel.load_adapters_for_inference(cfg, model_cfg, model)
         model = ModularAudioGPTModel.load_audio_encoder_for_inference(cfg, model_cfg, model)
 
+        logging.info(f"Checkpoint loading w/ Inject_model_parallel_rank...")
+        
+        # LEILI
+        # INFERENCE CHECKPOINT LOADING 
+        ##############################
+        #logging.info(f"Inference Checkpoint Loading")
+        #logging.info(f"model weight before/after checkpoint loading\n{model.state_dict()=}")
+
+        checkpoint_path = inject_model_parallel_rank(os.path.join(cfg.model.peft.restore_from_ckpt.get('checkpoint_dir'), cfg.model.peft.restore_from_ckpt.get('checkpoint_name')))
+        #logging.info(f"inject_model_parallel_rank output {checkpoint_path=}")
+        torch_state_dict = torch.load(checkpoint_path)['state_dict']
+        #logging.info(f"torch_state_dict from checkpoint {torch_state_dict=}")
+        model.setup_complete = False
+        model.load_state_dict(torch_state_dict, strict=True)
+        
+        #logging.info(f"model weight before/after checkpoint loading\n{model.state_dict()=}")
+        #logging.info(model.state_dict())
+        ##############################
+    
     model.freeze()
     if cfg.get("save_as_nemo", None):
         model.setup("predict")  # need to call setup() to load adapters and prepare for saving
