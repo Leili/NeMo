@@ -222,10 +222,13 @@ def get_nmt_tokenizer(
         return get_tokenizer(
             tokenizer_name=model_name, vocab_file=vocab_file, merges_file=merges_file, chat_template=chat_template
         )
+    elif library == 'tiktoken':
+        logging.info(f"tiktoken vocab file: {vocab_file}")
+        return nemo.collections.common.tokenizers.tiktoken_tokenizer.TiktokenTokenizer(vocab_file=vocab_file)
     elif library == 'tabular':
         return TabularTokenizer(vocab_file, delimiter=delimiter)
-    elif library == 'tiktoken':
-        return TiktokenTokenizer(vocab_file=vocab_file)
+    #elif library == 'tiktoken':
+    #    return TiktokenTokenizer(vocab_file=vocab_file)
     else:
         raise NotImplementedError(
             'Currently we only support "huggingface", "sentencepiece", "megatron", and "byte-level" tokenizer'
