@@ -447,6 +447,7 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
             new_input_ids = []
             new_loss_mask = []
             start_pos = 0
+            #LEILI: MAIN DEBUG
             #logging.info(f"LEILI:Before loop: {cur_input_ids=}\n{cur_input_length=}")
             assert len(audio_locator_ids) == 1
             #logging.info(f"LEILI:range {len(audio_locator_ids)}")

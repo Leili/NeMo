@@ -452,8 +452,8 @@ class NeMoMultimodalConversationJsonlAdapter:
                                 audio_locator_tag=self.audio_locator_tag,
                             )
                         )
-                        #LEILI: ADD SYSTEM TURN HERE
-                        for turn in ([{"value": data["system"], "from": "system", "type": "text"}] if "system" in data else []) + data["conversations"]
+                        #LEILI: ADD SYSTEM TURN HERE - add instruction if exists otherwise leave blank (will lead to three \n s)
+                        for turn in ([{"value": data["system"], "from": "system", "type": "text"}] if "system" in data else [{"value": "", "from": "system", "type": "text"}]) + data["conversations"]
                         #for turn in data["conversations"]
                     ],
                 )
