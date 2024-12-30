@@ -118,6 +118,8 @@ def get_tokenizer(
         return nemo.collections.common.tokenizers.sentencepiece_tokenizer.SentencePieceTokenizer(
             model_path=tokenizer_model, special_tokens=special_tokens, legacy=True
         )
+    elif tokenizer_name == 'tiktoken':
+        return nemo.collections.common.tokenizers.tiktoken_tokenizer.TiktokenTokenizer(vocab_file=vocab_file)
     elif tokenizer_name == 'word':
         return WordTokenizer(vocab_file=vocab_file, **special_tokens_dict)
     elif tokenizer_name == 'char':
@@ -210,6 +212,9 @@ def get_nmt_tokenizer(
             f'Getting Megatron tokenizer for pretrained model name: {model_name}, custom vocab file: {vocab_file}, and merges file: {merges_file}'
         )
         return get_tokenizer(tokenizer_name=model_name, vocab_file=vocab_file, merges_file=merges_file)
+    elif library == 'tiktoken':
+        logging.info(f"tiktoken vocab file: {vocab_file}")
+        return nemo.collections.common.tokenizers.tiktoken_tokenizer.TiktokenTokenizer(vocab_file=vocab_file)
     elif library == 'tabular':
         return TabularTokenizer(vocab_file, delimiter=delimiter)
     else:
