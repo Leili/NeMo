@@ -74,7 +74,9 @@ class AudioToTextGenerationStrategy(text_generation_strategy.GPTModelTextGenerat
                 encoder_input, (0, 0, 0, 0, 0, tokens_to_generate), value=0.0
             )  # (T, B, D)
             labels = torch.nn.functional.pad(
-                labels, (0, tokens_to_generate), value=self.model.tokenizer.pad_id
+                #mn-minitron
+                labels, (0, tokens_to_generate), value=self.model.tokenizer.unk_id
+                #labels, (0, tokens_to_generate), value=self.model.tokenizer.pad_id
             )  # (B, T)
 
             self.attention_mask = self.model._create_attention_mask(encoder_input.transpose(0, 1))

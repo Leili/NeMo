@@ -16,18 +16,18 @@ class MinitronPromptFormatter(PromptFormatter):
     NAME = "minitron"
     OUTPUT_ROLE = "assistant"
 
-    INSERT_BOS = False
+    INSERT_BOS = True
     INSERT_EOS = True
 
     TEMPLATE = {
         "system": {
-            "template": f"<extra_id_0>System\nYou are an AI assistant who can understand and generate multimodal content, including text, speech and audio. Please recognize the input audio and give appropriate reply in text.\n|message|\n\n",
+            "template": f"System\nYou are an AI assistant who can understand and generate multimodal content, including text, speech and audio. Please recognize the input audio and give appropriate reply in text.\n|message|</s>\n",
             "slots": {
                 "message": Modality.Text,
             },
         },
         "user": {
-            "template": f"<extra_id_1>User\n|message|\n<extra_id_1>Assistant\n",
+            "template": f"<s>User\n|message|\n<s>Assistant\n",
             "slots": {
                 "message": Modality.Text,
             },
@@ -40,6 +40,7 @@ class MinitronPromptFormatter(PromptFormatter):
         },
     }
 
+#NOTE: THIS FUNCTION IS NOT USED IN TEMPLATE CONSTRUCTION
 @registered_prompt_format_fn
 def minitron(cuts: CutSet, tokenizer: TokenizerSpec):
     prompt = MinitronPromptFormatter(tokenizer)
@@ -53,7 +54,7 @@ def minitron(cuts: CutSet, tokenizer: TokenizerSpec):
             context = cut.default_context
 
 
-        audio_locator_tag = "<extra_id_10><extra_id_12><extra_id_11>"
+        audio_locator_tag = "<SPECIAL_14><SPECIAL_16><SPECIAL_15>"
 
         turns = []
         turns.append({"role": "system", "slots": {"message": context}})

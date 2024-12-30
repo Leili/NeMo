@@ -418,7 +418,10 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
         # )
         input_embeds = lm_embedding.word_embeddings(input_ids)  # [b, t, c]
 
-        PAD_ID = self.tokenizer.pad_id
+        #LEILI --- tiktoken doesn't have a pad_id --> replacing that with eos_id
+        #mn-minitron
+        #PAD_ID = self.tokenizer.pad_id
+        PAD_ID = self.tokenizer.unk_id
         audio_cnt = 0
         all_input_embeds = []
         all_input_ids = []

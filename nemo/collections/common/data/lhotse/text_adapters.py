@@ -357,7 +357,7 @@ class NeMoMultimodalConversation:
             prompt = PromptFormatter.resolve(prompt)(tokenizer)
 
         # Collapse consecutive same-role turns into single turn for proper prompt formatting.
-        start_of_speech, end_of_speech = "<extra_id_10>", "<extra_id_11>"
+        start_of_speech, end_of_speech = "<SPECIAL_14>", "<SPECIAL_15>"
         turns = groupby(
             [
                 {

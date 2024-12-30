@@ -19,13 +19,12 @@ from pathlib import Path
 from typing import Dict, List, Optional
 import re
 
-'''
+
 try:
     import tiktoken
 except ImportError:
     pass
-'''
-import tiktoken
+
 from nemo.collections.common.tokenizers.tokenizer_spec import TokenizerSpec
 
 __all__ = ['TiktokenTokenizer']
