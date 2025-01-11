@@ -27,13 +27,13 @@ class MinitronPromptFormatter(PromptFormatter):
             },
         },
         "user": {
-            "template": f"<s>User\n|message|\n<s>Assistant\n",
+            "template": f"<s>User\n|message|</s>\n<s>Assistant\n",
             "slots": {
                 "message": Modality.Text,
             },
         },
         OUTPUT_ROLE: {
-            "template": f"|message|\n",
+            "template": f"|message|</s>\n",
             "slots": {
                 "message": Modality.Text,
             },
