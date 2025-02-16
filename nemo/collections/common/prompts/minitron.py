@@ -21,7 +21,7 @@ class MinitronPromptFormatter(PromptFormatter):
 
     TEMPLATE = {
         "system": {
-            "template": f"System\nYou are an AI assistant who can understand and generate multimodal content, including text, speech and audio. Please recognize the input audio and give appropriate reply in text.\n|message|</s>\n",
+            "template": f"System\nYou are an AI assistant who can understand and generate multimodal content, including text, speech and audio. Please recognize the input audio and give appropriate reply in text.|message|</s>\n",
             "slots": {
                 "message": Modality.Text,
             },
@@ -50,8 +50,10 @@ def minitron(cuts: CutSet, tokenizer: TokenizerSpec):
             cut = cut.first_non_padding_cut
         if cut.has_custom("context"):
             context = cut.context
-        else:
+        elif cut.has_custom("default_context"):
             context = cut.default_context
+        else: 
+            context = ""
 
 
         audio_locator_tag = "<SPECIAL_14><SPECIAL_16><SPECIAL_15>"

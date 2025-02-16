@@ -1749,6 +1749,39 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
                 group=parallel_state.get_data_parallel_group(),
             )
 
+            # LEILI DEBUG deduplication
+            # In this block, everything is the same as the commented block, but w/o deduplication
+            ##################################
+
+            inp_label_set = set()
+            deduplicated_outputs = {
+                'preds': [],
+                'labels': [],
+                'inputs': [],
+                'metadata': [],
+            }
+            
+            total_size = 0
+            for rank in range(0, parallel_state.get_data_parallel_world_size()):
+                for batch in gathered_outputs[rank]:
+                    #LEILI Inf
+                    #print(f"LEILI DEBUG ---> {batch.keys()=}")
+                    for pred, label, input, metadata in zip(
+                        batch['preds'], batch['labels'], batch['inputs'], batch['metadata']
+                    ):
+                        #print(f"LEILI DEBUG deduplicate ====> {batch.keys()=}")
+                        key = input + label + str(metadata)
+                        total_size += 1
+                        #if key not in inp_label_set:
+                        inp_label_set.add(key)
+                        deduplicated_outputs['preds'].append(pred)
+                        deduplicated_outputs['labels'].append(label)
+                        deduplicated_outputs['inputs'].append(input)
+                        deduplicated_outputs['metadata'].append(metadata)
+
+            ##################################
+
+            '''
             # Remove duplicate examples due to distributed sampler.
             inp_label_set = set()
             deduplicated_outputs = {
@@ -1763,6 +1796,7 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
                     for pred, label, input, metadata in zip(
                         batch['preds'], batch['labels'], batch['inputs'], batch['metadata']
                     ):
+                        print(f"LEILI DEBUG deduplicate ====> {batch.keys()=}")
                         key = input + label + str(metadata)
                         total_size += 1
                         if key not in inp_label_set:
@@ -1771,6 +1805,10 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
                             deduplicated_outputs['labels'].append(label)
                             deduplicated_outputs['inputs'].append(input)
                             deduplicated_outputs['metadata'].append(metadata)
+            '''
+
+            ##################################
+
 
             # Compute metric score
             metric_name = self.val_metric_name if mode == 'validation' else self.test_metric_name
