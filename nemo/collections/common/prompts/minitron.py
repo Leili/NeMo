@@ -21,7 +21,7 @@ class MinitronPromptFormatter(PromptFormatter):
 
     TEMPLATE = {
         "system": {
-            "template": f"System\nYou are an AI assistant who can understand and generate multimodal content, including text, speech and audio. Please recognize the input audio and give appropriate reply in text.|message|</s>\n",
+            "template": f"System\nYou are an AI assistant who can understand and generate multimodal content, including text, speech and audio. Please recognize the input audio and give appropriate reply in text.\n|message|</s>\n",
             "slots": {
                 "message": Modality.Text,
             },

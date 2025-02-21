@@ -51,6 +51,8 @@ def build_speechllm_dataset(model_instance, data_cfg, is_train):
         )
         data_cfg.max_seq_length = model_instance.cfg.max_position_embeddings
 
+    #logging.info("LEILI build_dataset.py - after if Check dataset max_seq_legnth")
+
     # Notably, the data weights are controlled by either bucketing_weights
     # or concat_sampling_probabilities depending on the dataset type.
     if data_cfg.get("use_lhotse"):
@@ -72,10 +74,13 @@ def build_speechllm_dataset(model_instance, data_cfg, is_train):
             convert_to_conv_by_inject_str=data_cfg.get('convert_to_conv_by_inject_str', None),
             convert_to_conv_by_inject_str_the_end=data_cfg.get('convert_to_conv_by_inject_str_the_end', False),
         )
+    
+    #logging.info("LEILI build_dataset.py - after if use_lhoste")
 
     # Notably, the data weights are controlled by either bucketing_weights
     # or concat_sampling_probabilities depending on the dataset type.
     if data_cfg.get('is_tarred', False):
+        #logging.info("LEILI build_dataset.py - if is_tarred")
         return get_tarred_audio_text_dataset_from_config(
             config=data_cfg,
             tokenizer=model_instance.tokenizer,
@@ -87,6 +92,7 @@ def build_speechllm_dataset(model_instance, data_cfg, is_train):
             world_size=parallel_state.get_data_parallel_world_size(),
         )
     else:
+        #logging.info("LEILI build_dataset.py - get_audio_text_dataset_from_config")
         return get_audio_text_dataset_from_config(
             manifest_filepath=data_cfg.manifest_filepath,
             config=data_cfg,
@@ -97,7 +103,7 @@ def build_speechllm_dataset(model_instance, data_cfg, is_train):
             answer_only_loss=model_instance.cfg.get('answer_only_loss', True),
             virtual_tokens=model_instance.virtual_tokens,
         )
-
+    
 
 def build_speechllm_dataloader(dataset, data_cfg, consumed_samples=0, is_predict=False, is_eval=False):
     """Buld dataloader given an input dataset."""

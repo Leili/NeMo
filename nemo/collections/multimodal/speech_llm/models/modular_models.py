@@ -1281,8 +1281,8 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
             model_cfg: merged model config
         """
         if pretrained_model_cfg:
-            model_cfg = pretrained_model_cfg
-        elif cfg.model.peft.restore_from_path or cfg.model.peft.restore_from_ckpt.checkpoint_dir:
+            model_cfg = pretrained_model_cfg   
+        elif hasattr(cfg.model, "peft") and (cfg.model.peft.restore_from_path or cfg.model.peft.restore_from_ckpt.checkpoint_dir):
             if cfg.model.peft.restore_from_path and cfg.model.peft.restore_from_path.endswith(".nemo"):
                 model_cfg = ModularAudioGPTModel.restore_from(
                     restore_path=cfg.model.peft.restore_from_path,
@@ -1966,6 +1966,7 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
             logging.info('Building test datasets...')
             # Wrap this in a list since the general finetuning parent class supports multi-validation.
             self._test_ds = self._build_dataset(self.cfg.data.test_ds, is_train=False)
+            logging.info('LEILI: _build_dataset complete')
         return
 
     def maybe_setup_test(self):
@@ -1982,6 +1983,7 @@ class ModularAudioGPTModel(SpeechLLMAdapterMixin, MegatronGPTSFTModel):
 
         if stage != 'validate':
             self.maybe_build_test()
+        #logging.info(f'LEILI After maybe_build_test {stage=}')
 
         if stage == 'validate' or stage == 'test':
             return
